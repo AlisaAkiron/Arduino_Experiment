@@ -57,7 +57,7 @@ void loop()
 void Start_New()
 {
     Serial.println("Start a new run.");
-    guessNumber = rand() % 10 + '0';
+    guessNumber = random(1, 10) + '0';
     // Serial.println(guessNumber);
     input = -1;
 }
