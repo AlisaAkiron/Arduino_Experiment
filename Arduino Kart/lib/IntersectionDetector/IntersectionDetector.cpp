@@ -29,8 +29,10 @@ INTERSECTION_TYPE IntersectionDetector::getIntersectionType() {
             return INTERSECTION_TYPE::FAR_LEFT;
         case 1000:
             return INTERSECTION_TYPE::FAR_RIGHT;
+        case 1100:
         case 1110:
             return INTERSECTION_TYPE::RECTANGLE_LEFT;
+        case 11:
         case 111:
             return INTERSECTION_TYPE::RECTANGLE_RIGHT;
         case 1111:

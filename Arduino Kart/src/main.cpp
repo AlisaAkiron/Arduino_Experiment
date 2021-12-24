@@ -13,7 +13,7 @@ DualMotorController dualMotorController(
         LEFT_MOTOR_PIN_2, RIGHT_MOTOR_PIN_EN,
         RIGHT_MOTOR_PIN_1, RIGHT_MOTOR_PIN_2,
         LEFT_INIT_SPEED, RIGHT_INIT_SPEED,
-        SPEED_SAMPLE_TIME, ENABLE_TEST_MODE);
+        SPEED_SAMPLE_TIME, &intersectionDetector, ENABLE_TEST_MODE);
 
 bool status = false;
 
@@ -29,6 +29,7 @@ void setup() {
 
     dualMotorController.setControlParameters(SPEED_MARGIN, SPEED_MAX_MARGIN);
     dualMotorController.setTurnSpeed(TURN_LEFT_SPEED, TURN_RIGHT_SPEED);
+    dualMotorController.setTurnRectParameters(RECT_STRAIGHT_DELAY, RECT_TURN_DELAY);
 }
 
 void loop() {
@@ -39,8 +40,7 @@ void loop() {
     }
 
     if (status) {
-        INTERSECTION_TYPE type = intersectionDetector.getIntersectionType();
-        dualMotorController.go(type);
+        dualMotorController.go();
     } else {
         dualMotorController.stop();
     }

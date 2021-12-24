@@ -10,7 +10,9 @@ DualMotorController::DualMotorController(
         uint8_t leftEn, uint8_t leftIn1,
         uint8_t leftIn2, uint8_t rightEn,
         uint8_t rightIn1, uint8_t rightIn2,
-        u16 initLeftSpeed, u16 initRightSpeed, uint16_t sampleTime, bool testMode) {
+        u16 initLeftSpeed, u16 initRightSpeed,
+        uint16_t sampleTime,IntersectionDetector* intersectionDetector,
+        bool testMode) {
     pinMode(leftEn, OUTPUT);
     pinMode(leftIn1, OUTPUT);
     pinMode(leftIn2, OUTPUT);
@@ -30,14 +32,26 @@ DualMotorController::DualMotorController(
     this->speedMaxMargin = 50;
     this->turnLeftSpeed = initLeftSpeed - speedMargin;
     this->turnRightSpeed = initRightSpeed - speedMargin;
+
+    this->intersectionDetector = intersectionDetector;
 }
 
 void DualMotorController::setControlParameters(u16 margin, u16 maxMargin) {
     this->speedMargin = margin;
     this->speedMaxMargin = maxMargin;
 }
+void DualMotorController::setTurnRectParameters(uint16_t straightDelay, uint16_t turnDelay) {
+    this->rectStraightDelay = straightDelay;
+    this->rectTurnDelay = turnDelay;
+}
+void DualMotorController::setTurnSpeed(u16 tls, u16 trs) {
+    this->turnLeftSpeed = tls;
+    this->turnRightSpeed = trs;
+}
 
-void DualMotorController::go(INTERSECTION_TYPE type) {
+void DualMotorController::go() {
+    INTERSECTION_TYPE type = this->intersectionDetector->getIntersectionType();
+
     if (stopSignal) {
         this->stop();
         return;
@@ -81,11 +95,11 @@ void DualMotorController::go(INTERSECTION_TYPE type) {
             }
             break;
         case RECTANGLE_LEFT:
-            // TODO: Handler
-            break;
+            TURN_LEFT_RECT();
+            return;
         case RECTANGLE_RIGHT:
-            // TODO: Handler
-            break;
+            TURN_RIGHT_RECT();
+            return;
         case RECTANGLE_LEFT_RIGHT:
             this->stopSignal = true;
             this->stop();
@@ -113,8 +127,52 @@ void DualMotorController::stop() {
     this->rightMotor->stop();
 }
 
-void DualMotorController::setTurnSpeed(u16 tls, u16 trs) {
-    this->turnLeftSpeed = tls;
-    this->turnRightSpeed = trs;
+void DualMotorController::TURN_LEFT_RECT() {
+    uint16_t lastTime = rectStraightDelay;
+    while (lastTime > 0) {
+        INTERSECTION_TYPE it = this->intersectionDetector->getIntersectionType();
+        if (it == INTERSECTION_TYPE::RECTANGLE_LEFT_RIGHT) {
+            stopSignal = true;
+            this->stop();
+            return;
+        }
+        delay(10);
+        lastTime -= 10;
+    }
+    this->leftMotor->backward();
+    this->rightMotor->forward();
+    delay(rectTurnDelay);
+    while (true) {
+        INTERSECTION_TYPE t = this->intersectionDetector->getIntersectionType();
+        if (t == INTERSECTION_TYPE::NO_INTERSECTION || t == INTERSECTION_TYPE::SLIGHT_LEFT || t == INTERSECTION_TYPE::SLIGHT_RIGHT) {
+            break;
+        }
+    }
+    this->leftMotor->forward();
+    this->rightMotor->forward();
 }
 
+void DualMotorController::TURN_RIGHT_RECT() {
+    uint16_t lastTime = rectStraightDelay;
+    while (lastTime > 0) {
+        INTERSECTION_TYPE it = this->intersectionDetector->getIntersectionType();
+        if (it == INTERSECTION_TYPE::RECTANGLE_LEFT_RIGHT) {
+            stopSignal = true;
+            this->stop();
+            return;
+        }
+        delay(10);
+        lastTime -= 10;
+    }
+    this->leftMotor->forward();
+    this->rightMotor->backward();
+    delay(rectTurnDelay);
+    while (true) {
+        INTERSECTION_TYPE t = this->intersectionDetector->getIntersectionType();
+        if (t == INTERSECTION_TYPE::NO_INTERSECTION || t == INTERSECTION_TYPE::SLIGHT_LEFT || t == INTERSECTION_TYPE::SLIGHT_RIGHT) {
+            break;
+        }
+    }
+    this->leftMotor->forward();
+    this->rightMotor->forward();
+}
