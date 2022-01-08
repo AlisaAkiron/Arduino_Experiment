@@ -7,7 +7,6 @@
 
 #include "L298N.h"
 #include "IntersectionDetector.h"
-#include "PID_v1.h"
 
 class DualMotorController {
 private:
